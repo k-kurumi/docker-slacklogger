@@ -1,0 +1,9 @@
+source "https://rubygems.org"
+
+gem 'slack-api'
+
+gem 'fluent-logger'
+
+gem 'pry'
+gem 'pry-doc'
+gem 'pry-byebug'

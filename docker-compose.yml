@@ -1,0 +1,24 @@
+elasticsearch:
+  build: ./elasticsearch
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+  ports:
+    - "9200:9200"
+
+kibana:
+  build: ./kibana
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+  links:
+    - elasticsearch
+  ports:
+    - "5601:5601"
+
+fluentd:
+  build: ./fluentd
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+  links:
+    - elasticsearch
+  ports:
+    - "24224:24224"

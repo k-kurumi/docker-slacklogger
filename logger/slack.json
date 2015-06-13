@@ -1,0 +1,14 @@
+{
+  "template": "slack-*",
+  "order": 1,
+  "mappings": {
+    "slack": {
+      "properties": {
+        "@timestamp": {"type": "date", "store": "yes", "format": "dateOptionalTime"},
+        "@log_name": {"type": "string", "store": "yes"},
+        "message": {"type": "string", "store" : "yes"},
+        "ts": {"type": "date", "store": "yes", "format": "dateOptionalTime"}
+      }
+    }
+  }
+}
