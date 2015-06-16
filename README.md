@@ -1,6 +1,6 @@
 # docker-slacklogger
 
-kuromoji入のelasticsearchにslackのログを保存する
+kuromoji入りのelasticsearchにslackのログを保存する
 
 コンテナ
 - fluentd
@@ -21,7 +21,5 @@ docker-compose up
 ```
 
 ## TODO
-- [ ] loggerを動くようする
 - [ ] loggerをコンテナ化する
-
-- [ ] analyzer指定が効いてない(今はindexごとに指定することで対処)
+- [ ] 分かち書きをやめて2gram化(記号が検索できないため)

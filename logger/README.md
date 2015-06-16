@@ -1,66 +1,55 @@
+# slack logbot
+
+slackのログをfluentdへ投げるbot
+
 
 ## Usage
 
+```
+# mappingの指定
+curl -XPUT 'localhost:9200/_template/slack_template2' -d '@slack.json'
 
-mappingの指定(TODO:ここでanalyzer指定が効かないため調べる)
+
+bundle install --path=vendor/bundle
+
+export SLACK_TOKEN=(Slack Real Time Messaging APIのBotsトークン)
+bundle exec ruby bin/logbot.rb
+```
+
+
+### 分かち書きの結果を確認
 
 ```
-$ curl -XPUT 'localhost:9200/_template/slack_template2' -d '@slack.json'
-```
-
-
-analyzerの指定(slack-*とはできなかった)
-
-- ana.sh
-- generate_next_index_analyzer.sh (明日分のindexを更新)
-
-```
-curl -XPUT 'localhost:9200/slack-2015.06.13' -d '
+$ curl -s 'localhost:9200/slack-2015.06.16/_analyze?analyzer=kuromoji' -d 'もう無さそうだし' | jq .
 {
-  "settings": {
-    "analysis": {
-      "analyzer": {
-        "default": {
-          "tokenizer": "kuromoji_tokenizer"
-        }
-      }
+  "tokens": [
+    {
+      "token": "もう",
+      "start_offset": 0,
+      "end_offset": 2,
+      "type": "word",
+      "position": 1
+    },
+    {
+      "token": "無い",
+      "start_offset": 2,
+      "end_offset": 3,
+      "type": "word",
+      "position": 2
+    },
+    {
+      "token": "そう",
+      "start_offset": 4,
+      "end_offset": 6,
+      "type": "word",
+      "position": 4
     }
-  }
+  ]
 }
-'
 ```
 
 
-インデックスにアナライザがデフォルトとして登録された確認する
-```
-$ curl 'localhost:9200/slack-2015.06.13/_analyze?pretty' -d '新しい日時フォーマットzz2テスト'
-{
-  "tokens" : [ {
-    "token" : "新しい",
-    "start_offset" : 0,
-    "end_offset" : 3,
-    "type" : "word",
-    "position" : 1
-  }, {
-    "token" : "日時",
-    "start_offset" : 3,
-    "end_offset" : 5,
-    "type" : "word",
-    "position" : 2
-  }, {
-    "token" : "フォーマット",
-    "start_offset" : 5,
-    "end_offset" : 11,
-    "type" : "word",
-    "position" : 3
-  }, {
-    "token" : "zz",
-    "start_offset" : 11,
-    "end_offset" : 13,
-    "type" : "word",
-    "position" : 4
-  }, {
-    "token" : "2",
-    "start_offset" : 13,
-    "end_offset" : 14,
-```
+### TODO
+
+- [ ] config.ymlから設定の読み込み
+- [ ] テストを作る
