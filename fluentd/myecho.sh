@@ -70,6 +70,14 @@ cat << __EOL__ > /data/fluentd.conf
     port ${ELASTICSEARCH_PORT_9200_TCP_PORT}
     flush_interval 10s
   </store>
+  <store>
+    @type file
+    path /data/mount/slacklog
+    append true
+    time_slice_format %Y%m%d
+    time_slice_wait 10m
+    compress gzip
+  </store>
 </match>
 __EOL__
 
