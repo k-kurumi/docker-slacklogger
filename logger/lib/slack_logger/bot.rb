@@ -85,13 +85,13 @@ module SlackLogger
           text.gsub!(/<@([0-9A-Z])+>/) do |m|
             uid = m.match(/[0-9A-Z]+/)[0]
             uname = SlackLogger::User.get_name(uid)
-            "<@#{uname}>"
+            "@#{uname}"
           end
 
           # @channel -> @!channel展開されているものを戻す
           text.gsub!(/<![a-zA-Z0-9]+>/) do |m|
             cname = m.match(/[a-zA-Z0-9]+/)[0]
-            "<@#{cname}>"
+            "@#{cname}"
           end
 
           # NOTE SLACK_TOKENがbot扱いのためSlack.team_infoからチーム名の取得不可
