@@ -9,12 +9,13 @@ require './lib/slack_logger/channel'
 module SlackLogger
   class Bot
 
-    def initialize(slack_token: nil)
+    def initialize(slack_token: nil, fluentd_host: 'localhost', fluentd_port: 24224, fluentd_tag: 'cloudnpaas')
       @log = Logger.new(STDOUT)
       @log.debug "initialize"
 
       @log.debug "slack_token: #{slack_token}"
-      @fluentd = Fluent::Logger::FluentLogger.new('slack', :host=>'localhost', :port=>24224)
+      @fluentd = Fluent::Logger::FluentLogger.new('slack', :host => fluentd_host, :port => fluentd_port)
+      @tag = fluentd_tag
     end
 
     def exec
@@ -109,7 +110,7 @@ module SlackLogger
           "channel_id: #{channel_id}, channel_name: #{channel_name} " +
           "text: #{text}"
 
-        @fluentd.post("cloudnpaas",
+        @fluentd.post(@tag,
           {
             ts:           ts,
             user_id:      user_id,
