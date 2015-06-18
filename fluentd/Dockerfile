@@ -16,4 +16,9 @@ RUN chmod +x myecho.sh
 
 EXPOSE 24224
 
+# ホスト側でマウントするパス
+ENV OUT_HOME=/var/out_home
+RUN useradd -d "$OUT_HOME" -u 1000 -m -s /bin/bash out
+USER out
+
 CMD ./myecho.sh

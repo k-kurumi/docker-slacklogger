@@ -1,1 +1,2 @@
-out/
+out/slacklog*
+out/fluentd.conf

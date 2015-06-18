@@ -47,7 +47,7 @@ env
 
 
 # NOTE dockerホスト宛にforwardするとき、sender側はheartbeat_type tcpを指定すること
-cat << __EOL__ > /data/fluentd.conf
+cat << __EOL__ > ${OUT_HOME}/fluentd.conf
 <source>
   @type forward
   @id forward_input
@@ -72,14 +72,14 @@ cat << __EOL__ > /data/fluentd.conf
   </store>
   <store>
     @type file
-    path /data/mount/slacklog
+    path ${OUT_HOME}/slacklog
     append true
     time_slice_format %Y%m%d
-    time_slice_wait 10m
+    time_slice_wait 5m
     compress gzip
   </store>
 </match>
 __EOL__
 
 echo "start fluentd"
-fluentd --config /data/fluentd.conf
+fluentd --config ${OUT_HOME}/fluentd.conf
