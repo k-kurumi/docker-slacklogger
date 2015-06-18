@@ -36,9 +36,6 @@ module SlackLogger
 
         # 全部で20以上あるので必要そうなのだけ使う
         case data["subtype"]
-        when "message_changed"
-          # urlを貼った後の要約、投稿済み発言の編集など
-          #
         when "bot_message"
           # bot(ユーザ一覧に出ないもの)の発言
           # attachmentsのあるのとないのがいる
@@ -100,6 +97,10 @@ module SlackLogger
           # NOTE botの発言にteamは無い
           #team_id = data["team"]
 
+        else
+          # それ以外は無視する
+          @log.debug "pass!!"
+          next
         end
 
         text = CGI.unescapeHTML(text)
