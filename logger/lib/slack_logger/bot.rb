@@ -1,6 +1,6 @@
 require 'logger'
 require 'fluent-logger'
-
+require 'cgi'
 
 require './lib/slack_logger/client'
 require './lib/slack_logger/user'
@@ -70,10 +70,6 @@ module SlackLogger
             text = data["text"]
           end
 
-          @log.debug "ts: #{ts}, user_id: #{user_id}, user_name: #{user_name}, " +
-            "channel_id: #{channel_id}, channel_name: #{channel_name} " +
-            "text: #{text}"
-
         when nil
           # ユーザ(hubot含む)の発言
           ts = Time.at(data["ts"].to_f).iso8601
@@ -104,11 +100,13 @@ module SlackLogger
           # NOTE botの発言にteamは無い
           #team_id = data["team"]
 
-          @log.debug "ts: #{ts}, user_id: #{user_id}, user_name: #{user_name}, " +
-            "channel_id: #{channel_id}, channel_name: #{channel_name} " +
-            "text: #{text}"
-
         end
+
+        text = CGI.unescapeHTML(text)
+
+        @log.debug "ts: #{ts}, user_id: #{user_id}, user_name: #{user_name}, " +
+          "channel_id: #{channel_id}, channel_name: #{channel_name} " +
+          "text: #{text}"
 
         @fluentd.post("cloudnpaas",
           {
