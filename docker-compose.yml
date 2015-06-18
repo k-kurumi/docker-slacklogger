@@ -18,7 +18,7 @@ fluentd:
   build: ./fluentd
   volumes:
     - /etc/localtime:/etc/localtime:ro
-    - ./out:/data/mount
+    - out:/var/out_home
   links:
     - elasticsearch
   ports:
