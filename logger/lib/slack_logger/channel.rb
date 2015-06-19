@@ -10,7 +10,7 @@ module SlackLogger
         if name
           return name
         else
-          fetch_list()
+          @@channels = fetch_list()
 
           name = search_name(channel_id)
           return name
@@ -28,7 +28,7 @@ module SlackLogger
       end
 
       def fetch_list
-        @@channels = Client.instance.slack.channels_list["channels"]
+        Client.instance.slack.channels_list["channels"]
       end
     end
 

@@ -5,17 +5,22 @@ require 'cgi'
 require './lib/slack_logger/client'
 require './lib/slack_logger/user'
 require './lib/slack_logger/channel'
+require './lib/slack_logger/config'
 
 module SlackLogger
   class Bot
 
-    def initialize(slack_token: nil, fluentd_host: 'localhost', fluentd_port: 24224, fluentd_tag: 'cloudnpaas')
+    def initialize
       @log = Logger.new(STDOUT)
       @log.debug "initialize"
 
-      @log.debug "slack_token: #{slack_token}"
+      fluentd_host = Config.get(:fluentd_host)
+      fluentd_port = Config.get(:fluentd_port)
+      @tag         = Config.get(:fluentd_tag)
+
       @fluentd = Fluent::Logger::FluentLogger.new('slack', :host => fluentd_host, :port => fluentd_port)
-      @tag = fluentd_tag
+
+      @log.debug "slack_token: #{Config.get(:slack_token)}"
     end
 
     def exec
@@ -24,7 +29,6 @@ module SlackLogger
       client = Client.instance.slack.realtime
 
       client.on :hello do
-        # Slack successfull connected ...
         @log.info 'Successfully connected.'
       end
 
@@ -39,90 +43,118 @@ module SlackLogger
         case data["subtype"]
         when "bot_message"
           # bot(ユーザ一覧に出ないもの)の発言
-          # attachmentsのあるのとないのがいる
-          ts = Time.at(data["ts"].to_f).iso8601
-
-          user_id = data["bot_id"]
-          user_name = data["username"]
-
-          channel_id   = data["channel"]
-          channel_name = Channel.get_name(channel_id)
-
-          text = ""
-
-          # botは2パターンあり
-          # 1. text="" and attachmentsつき
-          # 2. text="なにか" and attachmentsなし
-          if data["attachments"]
-            # jenkinsなど
-            text = data["attachments"].map do |a|
-              if a.has_key?("text")
-                # githubコメント付き
-                a["fallback"] + a["text"]
-              else
-                a["fallback"]
-              end
-            end
-          else
-            # まぐろなど
-            text = data["text"]
-          end
+          post(for_bot(data))
 
         when nil
           # ユーザ(hubot含む)の発言
-          ts = Time.at(data["ts"].to_f).iso8601
-
-          user_id   = data["user"]
-          user_name = User.get_name(user_id)
-
-          channel_id   = data["channel"]
-          channel_name = Channel.get_name(channel_id)
-
-          text = data["text"]
-
-          # NOTE botの発言は展開されていないため不要
-          # @user_name->@user_id展開されているものを戻す
-          text.gsub!(/<@([0-9A-Z])+>/) do |m|
-            uid = m.match(/[0-9A-Z]+/)[0]
-            uname = SlackLogger::User.get_name(uid)
-            "@#{uname}"
-          end
-
-          # @channel -> @!channel展開されているものを戻す
-          text.gsub!(/<![a-zA-Z0-9]+>/) do |m|
-            cname = m.match(/[a-zA-Z0-9]+/)[0]
-            "@#{cname}"
-          end
-
-          # NOTE SLACK_TOKENがbot扱いのためSlack.team_infoからチーム名の取得不可
-          # NOTE botの発言にteamは無い
-          #team_id = data["team"]
+          post(for_user(data))
 
         else
-          # それ以外は無視する
+          # それ以外は無視する(URLの要約、ファイルの添付など)
           @log.debug "pass!!"
           next
         end
 
-        text = CGI.unescapeHTML(text)
-
-        @log.debug "ts: #{ts}, user_id: #{user_id}, user_name: #{user_name}, " +
-          "channel_id: #{channel_id}, channel_name: #{channel_name} " +
-          "text: #{text}"
-
-        @fluentd.post(@tag,
-          {
-            ts:           ts,
-            user_id:      user_id,
-            user_name:    user_name,
-            channel_id:   channel_id,
-            channel_name: channel_name,
-            text:         text,
-          })
-
       end
 
       client.start
+    end
+
+    private
+
+    def for_user(data)
+      # ユーザ(hubot含む)の発言を整形する
+      ts = Time.at(data["ts"].to_f).iso8601
+
+      user_id   = data["user"]
+      user_name = User.get_name(user_id)
+
+      channel_id   = data["channel"]
+      channel_name = Channel.get_name(channel_id)
+
+      text = data["text"]
+
+      # NOTE botの発言は展開されていないため不要
+      # @user_name->@user_id展開されているものを戻す
+      text.gsub!(/<@([0-9A-Z])+>/) do |m|
+        uid = m.match(/[0-9A-Z]+/)[0]
+        uname = SlackLogger::User.get_name(uid)
+        "@#{uname}"
+      end
+
+      # @channel -> @!channel展開されているものを戻す
+      text.gsub!(/<![a-zA-Z0-9]+>/) do |m|
+        cname = m.match(/[a-zA-Z0-9]+/)[0]
+        "@#{cname}"
+      end
+
+      text = CGI.unescapeHTML(text)
+
+      return {
+        ts:           ts,
+        user_id:      user_id,
+        user_name:    user_name,
+        channel_id:   channel_id,
+        channel_name: channel_name,
+        text:         text,
+      }
+    end
+
+    def for_bot(data)
+      # bot(ユーザ一覧に出ないもの)の発言を整形する
+      ts = Time.at(data["ts"].to_f).iso8601
+
+      user_id = data["bot_id"]
+      user_name = data["username"]  # usernaemがないbotもある
+
+      channel_id   = data["channel"]
+      channel_name = Channel.get_name(channel_id)
+
+      text = ""
+
+      # botは2パターンあり
+      # 1. text="" and attachmentsつき
+      # 2. text="なにか" and attachmentsなし
+      if data["attachments"]
+        # jenkinsなど
+        text = data["attachments"].map do |a|
+          if a.has_key?("text")
+            # githubコメント付き
+            a["fallback"] + a["text"]
+          else
+            a["fallback"]
+          end
+        end
+      else
+        # まぐろなど
+        text = data["text"]
+      end
+
+      text = CGI.unescapeHTML(text)
+
+      return {
+        ts:           ts,
+        user_id:      user_id,
+        user_name:    user_name,
+        channel_id:   channel_id,
+        channel_name: channel_name,
+        text:         text,
+      }
+    end
+
+    def post(log_data)
+      # NOTE: log_data format
+      # {
+      #   ts:           "発言日時(ISO8601)",
+      #   user_id:      "発言ユーザID",
+      #   user_name:    "発言ユーザ名",
+      #   channel_id:   "発言チャンネルのID",
+      #   channel_name: "発言チャンネル名",
+      #   text:         "発言内容",
+      # }
+
+      @log.debug "post #{log_data}"
+      @fluentd.post(@tag, log_data)
     end
 
   end
