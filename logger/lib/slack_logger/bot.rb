@@ -14,13 +14,17 @@ module SlackLogger
       @log = Logger.new(STDOUT)
       @log.debug "initialize"
 
-      fluentd_host = Config.get(:fluentd_host)
-      fluentd_port = Config.get(:fluentd_port)
-      @tag         = Config.get(:fluentd_tag)
+      token        = Config.instance.get(:slack_token)
+      fluentd_host = Config.instance.get(:fluentd_host)
+      fluentd_port = Config.instance.get(:fluentd_port)
+      @tag         = Config.instance.get(:fluentd_tag)
+
+      @log.debug "slack_token: #{token}"
+      @log.debug "fluentd_host: #{fluentd_host}"
+      @log.debug "fluentd_port: #{fluentd_port}"
+      @log.debug "fluentd_tag: #{@tag}"
 
       @fluentd = Fluent::Logger::FluentLogger.new('slack', :host => fluentd_host, :port => fluentd_port)
-
-      @log.debug "slack_token: #{Config.get(:slack_token)}"
     end
 
     def exec
@@ -34,33 +38,34 @@ module SlackLogger
 
       client.on :message do |data|
         @log.info data
-
-        # data["text"] が無いものが通常の発言文字
-        # data["message"] があるとurlを貼ったあとの要約
-        # data["subtype"] があるとイベントっぽいの
-
-        # 全部で20以上あるので必要そうなのだけ使う
-        case data["subtype"]
-        when "bot_message"
-          # bot(ユーザ一覧に出ないもの)の発言
-          post(for_bot(data))
-
-        when nil
-          # ユーザ(hubot含む)の発言
-          post(for_user(data))
-
-        else
-          # それ以外は無視する(URLの要約、ファイルの添付など)
-          @log.debug "pass!!"
-          next
-        end
-
+        parse(data)
       end
 
       client.start
     end
 
     private
+
+    def parse(data)
+      # 全部で20以上あるので必要そうなのだけ使う
+      case data["subtype"]
+      when "bot_message"
+        # bot(ユーザ一覧に出ないもの)の発言
+        post(for_bot(data))
+
+      when "message_changed"
+        # URL貼付け後の要約など
+        post(for_url(data))
+
+      when nil
+        # ユーザ(hubot含む)の発言
+        post(for_user(data))
+
+      else
+        # それ以外は無視する(URLの要約、ファイルの添付など)
+        @log.debug "pass!!"
+      end
+    end
 
     def for_user(data)
       # ユーザ(hubot含む)の発言を整形する
@@ -89,6 +94,31 @@ module SlackLogger
       end
 
       text = CGI.unescapeHTML(text)
+
+      return {
+        ts:           ts,
+        user_id:      user_id,
+        user_name:    user_name,
+        channel_id:   channel_id,
+        channel_name: channel_name,
+        text:         text,
+      }
+    end
+
+    def for_url(data)
+      # URL貼付け後の要約を整形する
+      msg = data["message"]
+      at0 = data["message"]["attachments"][0]
+
+      ts = Time.at(msg["ts"].to_f).iso8601
+
+      user_id   = msg["user"]
+      user_name = User.get_name(user_id)
+
+      channel_id   = data["channel"]
+      channel_name = Channel.get_name(channel_id)
+
+      text = [at0["title"], at0["text"]].compact.join(" ")
 
       return {
         ts:           ts,

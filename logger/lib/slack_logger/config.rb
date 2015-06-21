@@ -2,20 +2,22 @@ require 'singleton'
 
 module SlackLogger
   class Config
-    @@config = {}
+    include Singleton
 
-    class << self
-      def set(hash)
-        @@config = hash
-      end
+    def initialize
+      @config = {}
+    end
 
-      def get(key)
-        @@config[key]
-      end
+    def set(hash)
+      @config = hash
+    end
 
-      def get_all
-        @@config
-      end
+    def get(key)
+      @config[key]
+    end
+
+    def get_all
+      @config
     end
 
   end
