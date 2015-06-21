@@ -9,7 +9,7 @@ module SlackLogger
 
     def initialize
       Slack.configure do |config|
-        config.token = Config.get(:slack_token)
+        config.token = Config.instance.get(:slack_token)
       end
       auth = Slack.auth_test
       fail auth['error'] unless auth['ok']
