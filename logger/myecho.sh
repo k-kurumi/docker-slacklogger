@@ -57,6 +57,13 @@ env
 export FLUENTD_HOST=${FLUENTD_PORT_24224_TCP_ADDR}
 export FLUENTD_PORT=${FLUENTD_PORT_24224_TCP_PORT}
 
-echo "start slacklogger"
+echo "wait for elasticsearch 10s"
+sleep 10
+
 cd slacklogger
+
+echo "put mapping"
+curl -XPUT "${ELASTICSEARCH_PORT_9200_TCP_ADDR}:${ELASTICSEARCH_PORT_9200_TCP_PORT}/_template/slack_template2" -d '@slack.json'
+
+echo "start slacklogger"
 bundle exec ruby bin/logbot.rb
