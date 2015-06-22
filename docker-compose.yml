@@ -39,7 +39,8 @@ logger:
 rawlog:
   image: ruby:latest
   volumes:
-    - out:/out
+    - /etc/localtime:/etc/localtime:ro
+    - out:/out:ro
   expose:
     - "8889"
   ports:
