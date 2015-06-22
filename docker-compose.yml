@@ -23,3 +23,24 @@ fluentd:
     - elasticsearch
   ports:
     - "24224:24224"
+
+# slackのログボット
+logger:
+  build: ./logger
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+  links:
+    - fluentd
+  env_file:
+    ./logger/.envrc
+
+# slackのfluentd生ログ
+rawlog:
+  image: ruby:latest
+  volumes:
+    - out:/out
+  expose:
+    - "8889"
+  ports:
+    - "8889:8889"
+  command: ruby -run -e httpd -- -p 8889 /out
