@@ -4,7 +4,7 @@ WORKDIR /data
 
 RUN \
   apt-get update && \
-  apt-get install -yq git && \
+  apt-get install -yq git curl && \
   rm -rf /var/lib/apt/lists/*
 
 RUN \
