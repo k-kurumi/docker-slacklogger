@@ -30,6 +30,15 @@ pip install docker-compose
         docker-compose build
         docker-compose up
 
+
+## elasticsearchが壊れた時の復旧方法について
+
+2種類の復旧方法あり
+
+- elasticsearch的な復旧手順をとる (要調査)
+- 生ログ(rawlog)から流し直す (生ログはtsvで3つ目をそのまま送ればよい)
+
+
 ## TODO
 
 - [ ] kuromojiをやめて2gram化(記号が検索できないため)
