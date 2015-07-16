@@ -19,8 +19,11 @@ pip install docker-compose
 
 1. 設定ファイルの修正
 
-        cp logger/.envrc.sample logger/.envrc
-        vi logger/.envrc    # slackのtokenなど変更
+        # サンプルから設定ファイルを作る
+        cp logger/slack.env.sample logger/slack.env
+
+        # SLACKのTOKENなどを変更する
+        vi logger/slack.env
 
 2. ビルドと起動
 

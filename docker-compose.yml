@@ -33,7 +33,7 @@ logger:
     - fluentd
     - elasticsearch
   env_file:
-    ./logger/.envrc
+    - ./logger/slack.env
 
 # slackのfluentd生ログ
 rawlog:
